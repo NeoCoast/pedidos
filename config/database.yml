@@ -85,20 +85,22 @@ test:
 # for a full overview on how database connection configuration can be specified.
 #
 production:
-  primary: &primary_production
+  primary:
     <<: *default
-    database: oficina_pedidos_production
-    username: oficina_pedidos
-    password: <%= ENV["OFICINA_PEDIDOS_DATABASE_PASSWORD"] %>
+    url: <%= ENV["DB_URL_PRIMARY"] %>
+    database: secom_prod
   cache:
-    <<: *primary_production
-    database: oficina_pedidos_production_cache
+    <<: *default
+    url: <%= ENV["DB_URL_CACHE"] %>
+    database: secom_production_cache
     migrations_paths: db/cache_migrate
   queue:
-    <<: *primary_production
-    database: oficina_pedidos_production_queue
+    <<: *default
+    url: <%= ENV["DB_URL_QUEUE"] %>
+    database: secom_production_queue
     migrations_paths: db/queue_migrate
   cable:
-    <<: *primary_production
-    database: oficina_pedidos_production_cable
+    <<: *default
+    url: <%= ENV["DB_URL_CABLE"] %>
+    database: secom_production_cable
     migrations_paths: db/cable_migrate
