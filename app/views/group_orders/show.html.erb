@@ -9,7 +9,7 @@
           <%= @group_order.restaurant.name %>
         <% end %>
       </h1>
-      <p class="text-slate-500 text-sm mt-1.5"><%= @group_order.date.strftime("%d/%m/%Y") %> &middot; Creado por <span class="text-slate-400"><%= @group_order.creator.display_name %></span></p>
+      <p class="text-slate-500 text-sm mt-1.5"><%= @group_order.date.strftime("%d/%m/%Y %H:%M") %> &middot; Creado por <span class="text-slate-400"><%= @group_order.creator.display_name %></span></p>
     </div>
     <div class="flex items-center gap-3 shrink-0">
       <span class="inline-flex items-center px-3 py-1.5 text-xs font-semibold rounded-full
@@ -360,10 +360,25 @@
     </div>
   </div>
 
+  <% if %w[open closed].include?(@group_order.status) %>
+    <div class="mb-6">
+      <%= link_to download_csv_group_order_path(@group_order), class: "btn-ghost" do %>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        Descargar CSV
+      <% end %>
+    </div>
+  <% end %>
+
   <% if @group_order.status == "delivered" %>
-    <% all_participants = @individual_orders.flat_map { |io| [{paid: io.paid?}] + io.order_shares.map { |s| {paid: s.paid?} } } %>
+    <% all_participants = @individual_orders.flat_map { |io| [{paid: io.paid?, user: io.user, total: io.per_person_total}] + io.order_shares.includes(:user).map { |s| {paid: s.paid?, user: s.user, total: io.per_person_total} } } %>
     <% paid_count = all_participants.count { |p| p[:paid] } %>
     <% total_count = all_participants.size %>
+    <% discount = @group_order.percentage_discount.to_f %>
+    <% unpaid = all_participants.reject { |p| p[:paid] } %>
+    <% slack_text = unpaid.map { |p|
+      debt = discount != 0 ? (p[:total] * (1 - discount / 100)).round(2) : p[:total].round(2)
+      "@#{p[:user].first_name} #{p[:user].last_name} - $#{sprintf('%.2f', debt)}"
+    }.join("\n") %>
     <div class="glass-card-static p-4 mb-6">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
@@ -375,8 +390,20 @@
             <p class="text-xs text-slate-500"><%= paid_count %>/<%= total_count %> pagados</p>
           </div>
         </div>
-        <div class="w-24 sm:w-32 h-2 rounded-full bg-white/5 overflow-hidden shrink-0">
-          <div class="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all duration-500" style="width: <%= total_count > 0 ? (paid_count.to_f / total_count * 100) : 0 %>%"></div>
+        <div class="flex items-center gap-3">
+          <% if unpaid.any? %>
+            <button type="button"
+                    data-controller="clipboard"
+                    data-clipboard-text-value="<%= slack_text %>"
+                    data-action="click->clipboard#copy"
+                    class="btn-ghost">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
+              Slack Reminder
+            </button>
+          <% end %>
+          <div class="w-24 sm:w-32 h-2 rounded-full bg-white/5 overflow-hidden shrink-0">
+            <div class="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all duration-500" style="width: <%= total_count > 0 ? (paid_count.to_f / total_count * 100) : 0 %>%"></div>
+          </div>
         </div>
       </div>
     </div>

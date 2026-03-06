@@ -20,6 +20,7 @@ Rails.application.routes.draw do
       patch :update_discount
       patch :update_discount_from_total
       patch :update_bank_account
+      get :download_csv
     end
     resources :individual_orders, only: [:new, :create, :edit, :update, :destroy] do
       member do

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_06_184657) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_06_191622) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -27,7 +27,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_06_184657) do
     t.string "bank_account"
     t.datetime "created_at", null: false
     t.bigint "created_by_id", null: false
-    t.date "date"
+    t.datetime "date"
     t.decimal "percentage_discount", precision: 5, scale: 2, default: "0.0"
     t.bigint "restaurant_id", null: false
     t.string "status"

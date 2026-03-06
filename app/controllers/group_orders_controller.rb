@@ -1,6 +1,8 @@
+require "csv"
+
 class GroupOrdersController < ApplicationController
   before_action :require_user, only: [:new, :create]
-  before_action :set_group_order, only: [:show, :destroy, :advance_status, :revert_status, :update_discount, :update_discount_from_total, :update_bank_account]
+  before_action :set_group_order, only: [:show, :destroy, :advance_status, :revert_status, :update_discount, :update_discount_from_total, :update_bank_account, :download_csv]
 
   def index
     @active_orders = GroupOrder.where(status: %w[open closed ordered])
@@ -19,7 +21,7 @@ class GroupOrdersController < ApplicationController
   end
 
   def new
-    @group_order = GroupOrder.new(date: Date.today, status: "open")
+    @group_order = GroupOrder.new(date: Time.current, status: "open")
     @restaurants = Restaurant.order(:name)
   end
 
@@ -94,6 +96,29 @@ class GroupOrdersController < ApplicationController
     else
       redirect_to @group_order, alert: "No se pudo actualizar la cuenta bancaria."
     end
+  end
+
+  def download_csv
+    unless @group_order.status.in?(%w[open closed])
+      return redirect_to @group_order, alert: "CSV solo disponible en estado abierto o cerrado."
+    end
+
+    orders = @group_order.individual_orders.includes(:user, meal: [:menu_item, :toppings, :extras])
+
+    csv_data = CSV.generate do |csv|
+      csv << ["Nickname", "Comida", "Toppings", "Extras"]
+      orders.each do |io|
+        csv << [
+          io.user.display_name,
+          io.meal.menu_item.name,
+          io.meal.toppings.map(&:name).join(", ").presence || "-",
+          io.meal.extras.map(&:name).join(", ").presence || "-"
+        ]
+      end
+    end
+
+    filename = "#{@group_order.restaurant.name.parameterize}-#{@group_order.date.strftime('%Y%m%d')}.csv"
+    send_data csv_data, filename: filename, type: "text/csv"
   end
 
   def destroy
