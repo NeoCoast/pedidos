@@ -2,7 +2,7 @@ class UsersController < ApplicationController
   before_action :set_user, only: [:show, :edit, :update, :destroy]
 
   def index
-    @users = User.order(:first_name, :last_name)
+    @users = User.kept.order(:first_name, :last_name)
   end
 
   def show; end
@@ -31,7 +31,7 @@ class UsersController < ApplicationController
   end
 
   def destroy
-    @user.destroy
+    @user.discard
     redirect_to users_path, notice: "Usuario eliminado."
   end
 

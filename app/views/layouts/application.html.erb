@@ -67,7 +67,7 @@
                     <input type="text" data-user-selector-target="search" data-action="input->user-selector#onSearch" placeholder="Buscar usuario..." class="input-dark text-sm py-2 px-3 w-full" autocomplete="off">
                   </div>
                   <div data-user-selector-target="list" class="max-h-64 overflow-y-auto rounded-lg border border-white/[0.06]">
-                    <% User.order(:first_name).each do |u| %>
+                    <% User.kept.order(:first_name).each do |u| %>
                       <button type="button" data-action="click->user-selector#pick" data-user-item data-user-value="<%= u.id %>" data-user-name="<%= u.display_name %>" class="w-full text-left px-3 py-2.5 text-sm text-slate-300 hover:bg-amber-500/10 hover:text-amber-400 transition cursor-pointer border-b border-white/[0.04] last:border-0 <%= 'text-amber-400 bg-amber-500/5' if session[:current_user_id].to_s == u.id.to_s %>">
                         <%= u.display_name %>
                       </button>

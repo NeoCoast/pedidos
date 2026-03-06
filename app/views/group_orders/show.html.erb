@@ -14,12 +14,23 @@
             end %>">
         <%= { 'open' => 'Abierto', 'closed' => 'Cerrado', 'ordered' => 'Pedido', 'delivered' => 'Entregado' }[@group_order.status] %>
       </span>
-      <% if @group_order.status != "delivered" %>
+      <% if current_user == @group_order.creator %>
         <% status_translations = { 'open' => 'Abierto', 'closed' => 'Cerrado', 'ordered' => 'Pedido', 'delivered' => 'Entregado' } %>
-        <%= button_to "Avanzar a #{status_translations[GroupOrder::STATUSES[GroupOrder::STATUSES.index(@group_order.status) + 1]]}",
-              advance_status_group_order_path(@group_order),
-              method: :patch,
-              class: "btn-advance" %>
+        <% current_index = GroupOrder::STATUSES.index(@group_order.status) %>
+        <div class="flex items-center gap-2">
+          <% if current_index > 0 %>
+            <%= button_to "Volver a #{status_translations[GroupOrder::STATUSES[current_index - 1]]}",
+                  revert_status_group_order_path(@group_order),
+                  method: :patch,
+                  class: "btn-ghost text-xs" %>
+          <% end %>
+          <% if @group_order.status != "delivered" %>
+            <%= button_to "Avanzar a #{status_translations[GroupOrder::STATUSES[current_index + 1]]}",
+                  advance_status_group_order_path(@group_order),
+                  method: :patch,
+                  class: "btn-advance" %>
+          <% end %>
+        </div>
       <% end %>
     </div>
   </div>
@@ -27,10 +38,24 @@
   <% if @group_order.status == "open" && current_user %>
     <% unless @group_order.individual_orders.exists?(user: current_user) %>
       <div class="mb-6">
-        <%= link_to new_group_order_individual_order_path(@group_order), class: "btn-success" do %>
+        <button type="button" data-controller="modal" data-action="click->modal#open" data-modal-id="new-order-modal" class="btn-success">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
           Agregar Mi Pedido
-        <% end %>
+        </button>
+        <dialog id="new-order-modal" class="modal-dark modal-large" data-controller="modal" data-modal-target="dialog" data-action="click->modal#backdropClose">
+          <div class="p-5 sm:p-6">
+            <div class="flex items-center justify-between mb-5">
+              <div>
+                <h3 class="text-base font-semibold text-white">Agregar Tu Pedido</h3>
+                <p class="text-xs text-slate-500 mt-0.5"><%= @group_order.restaurant.name %></p>
+              </div>
+              <button type="button" data-action="click->modal#close" class="text-slate-500 hover:text-white transition cursor-pointer">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
+            <%= render "individual_orders/form", group_order: @group_order, individual_order: @individual_order, meal: @meal, menu_items: @menu_items %>
+          </div>
+        </dialog>
       </div>
     <% end %>
   <% end %>
@@ -118,7 +143,7 @@
             </td>
             <td class="text-right font-bold whitespace-nowrap <%= io.paid? && @group_order.status == 'delivered' ? 'text-emerald-400' : 'text-white' %>">
               <% discount = @group_order.percentage_discount.to_f %>
-              <% if discount > 0 %>
+              <% if discount != 0 %>
                 <p class="text-xs text-slate-500 line-through">$<%= number_with_precision(io.total, precision: 2) %></p>
                 <p>$<%= number_with_precision(io.total * (1 - discount / 100), precision: 2) %></p>
               <% else %>
@@ -152,10 +177,15 @@
           <% extra_cols += 1 if @group_order.status == "delivered" %>
           <td colspan="<%= 4 + extra_cols %>" class="text-right text-sm font-bold text-slate-300">Total:</td>
           <td class="text-right whitespace-nowrap">
-            <% if @group_order.percentage_discount.to_f > 0 %>
+            <% disc = @group_order.percentage_discount.to_f %>
+            <% if disc != 0 %>
               <p class="text-sm text-slate-500 line-through">$<%= number_with_precision(@group_order.grand_total, precision: 2) %></p>
               <p class="text-lg font-bold text-amber-400">$<%= number_with_precision(@group_order.discounted_total, precision: 2) %></p>
-              <p class="text-xs text-emerald-400">-<%= number_with_precision(@group_order.percentage_discount, precision: 2) %>% desc.</p>
+              <% if disc > 0 %>
+                <p class="text-xs text-emerald-400">-<%= number_with_precision(disc, precision: 2) %>% desc.</p>
+              <% else %>
+                <p class="text-xs text-red-400">+<%= number_with_precision(disc.abs, precision: 2) %>% propina</p>
+              <% end %>
             <% else %>
               <p class="text-lg font-bold text-amber-400">$<%= number_with_precision(@group_order.grand_total, precision: 2) %></p>
             <% end %>
@@ -177,7 +207,7 @@
       </div>
       <%= form_with url: update_discount_group_order_path(@group_order), method: :patch, class: "flex items-center gap-3" do |f| %>
         <div class="flex items-center gap-2">
-          <%= f.number_field "group_order[percentage_discount]", value: @group_order.percentage_discount, step: 0.01, min: 0, max: 100, class: "input-dark text-sm py-1.5 px-3 w-24 text-center", placeholder: "0" %>
+          <%= f.number_field "group_order[percentage_discount]", value: @group_order.percentage_discount, step: 0.01, max: 100, class: "input-dark text-sm py-1.5 px-3 w-24 text-center", placeholder: "0" %>
           <span class="text-slate-500 text-sm font-medium">%</span>
         </div>
         <%= f.submit "Aplicar", class: "btn-primary text-xs py-1.5 px-4" %>
@@ -193,8 +223,8 @@
           <div class="flex items-center gap-2">
             <span class="text-slate-500 text-sm font-medium">$</span>
             <% grand = @group_order.grand_total %>
-            <% current_paid = @group_order.percentage_discount.to_f > 0 ? (grand * (1 - @group_order.percentage_discount.to_f / 100)).round(2) : nil %>
-            <%= f.number_field "group_order[total_paid]", value: current_paid, step: 0.01, min: 0, max: grand, class: "input-dark text-sm py-1.5 px-3 w-28 text-center", placeholder: grand.round(2) %>
+            <% current_paid = @group_order.percentage_discount.to_f != 0 ? (grand * (1 - @group_order.percentage_discount.to_f / 100)).round(2) : nil %>
+            <%= f.number_field "group_order[total_paid]", value: current_paid, step: 0.01, min: 0, class: "input-dark text-sm py-1.5 px-3 w-28 text-center", placeholder: "0,0" %>
           </div>
           <%= f.submit "Calcular", class: "btn-primary text-xs py-1.5 px-4" %>
         <% end %>

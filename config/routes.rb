@@ -16,6 +16,7 @@ Rails.application.routes.draw do
   resources :group_orders do
     member do
       patch :advance_status
+      patch :revert_status
       patch :update_discount
       patch :update_discount_from_total
       patch :update_bank_account

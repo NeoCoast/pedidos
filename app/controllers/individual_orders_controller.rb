@@ -32,8 +32,8 @@ class IndividualOrdersController < ApplicationController
     if @meal.save && @individual_order.save
       redirect_to @group_order, notice: "Tu pedido fue agregado."
     else
-      @menu_items = @group_order.restaurant.menu_items.order(:name)
-      render :new, status: :unprocessable_entity
+      errors = (@meal.errors.full_messages + @individual_order.errors.full_messages).uniq.join(", ")
+      redirect_to @group_order, alert: "No se pudo agregar: #{errors}"
     end
   end
 
