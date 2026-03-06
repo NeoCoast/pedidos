@@ -1,0 +1,72 @@
+<%= form_with url: (individual_order.persisted? ? group_order_individual_order_path(group_order, individual_order) : group_order_individual_orders_path(group_order)),
+             method: (individual_order.persisted? ? :patch : :post),
+             class: "space-y-5",
+             data: { controller: "menu-item-selector total-calculator" } do |f| %>
+  <% if individual_order.errors.any? || meal.errors.any? %>
+    <div class="px-4 py-3 rounded-xl border border-red-500/20 bg-red-500/10">
+      <ul class="list-disc pl-5 text-sm space-y-1 text-red-400">
+        <% (individual_order.errors.full_messages + meal.errors.full_messages).uniq.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <label class="block text-sm font-medium text-slate-400 mb-1.5">Item del Menu</label>
+    <div data-controller="custom-select" class="relative">
+      <% selected_mi = menu_items.find { |mi| mi.id == meal.menu_item_id } %>
+      <input type="hidden" name="meal[menu_item_id]"
+             value="<%= meal.menu_item_id %>"
+             data-custom-select-target="hidden"
+             data-menu-item-selector-target="select"
+             data-action="change->menu-item-selector#loadOptions change->total-calculator#calculate"
+             <% if selected_mi %>data-price="<%= selected_mi.price %>"<% end %>>
+      <button type="button" data-custom-select-target="button" data-action="click->custom-select#toggle"
+              class="input-dark w-full text-left flex items-center justify-between cursor-pointer <%= selected_mi ? 'text-white' : 'text-slate-500' %>">
+        <span data-label><%= selected_mi ? "#{selected_mi.name} ($#{number_with_precision(selected_mi.price, precision: 2)})" : "-- Seleccionar item --" %></span>
+        <svg class="w-4 h-4 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+      </button>
+      <div data-custom-select-target="dropdown" class="hidden absolute z-50 mt-1 w-full rounded-xl border border-white/[0.08] bg-[#0f1629]/[0.98] shadow-xl backdrop-blur-sm">
+        <div class="p-2">
+          <input type="text" data-custom-select-target="search" data-action="input->custom-select#search" placeholder="Buscar item..." class="input-dark text-sm py-2 px-3 w-full" autocomplete="off">
+        </div>
+        <div data-custom-select-target="list" class="max-h-56 overflow-y-auto border-t border-white/[0.06]">
+          <% menu_items.each do |mi| %>
+            <button type="button" data-option data-action="click->custom-select#pick"
+                    data-value="<%= mi.id %>" data-label="<%= mi.name %> ($<%= number_with_precision(mi.price, precision: 2) %>)" data-price="<%= mi.price %>"
+                    class="w-full text-left px-3 py-2.5 text-sm text-slate-300 hover:bg-amber-500/10 hover:text-amber-400 transition cursor-pointer border-b border-white/[0.04] last:border-0 <%= 'text-amber-400 bg-amber-500/5' if meal.menu_item_id == mi.id %>">
+              <%= mi.name %> <span class="text-slate-600">($<%= number_with_precision(mi.price, precision: 2) %>)</span>
+            </button>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="options-container" data-menu-item-selector-target="options">
+    <% if meal.menu_item_id.present? %>
+      <% menu_item = menu_items.find { |mi| mi.id == meal.menu_item_id } %>
+      <% if menu_item %>
+        <%= render partial: "menu_items/options", locals: {
+          toppings: menu_item.toppings,
+          extras: menu_item.extras,
+          menu_item: menu_item,
+          selected_topping_ids: meal.toppings.map(&:id),
+          selected_extra_ids: meal.extras.map(&:id)
+        } %>
+      <% end %>
+    <% end %>
+  </div>
+
+  <div class="rounded-xl border border-amber-500/20 bg-amber-500/10 p-4">
+    <p class="text-lg font-bold text-white">
+      Total Estimado: <span class="text-amber-400">$<span data-total-calculator-target="total">0.00</span></span>
+    </p>
+  </div>
+
+  <div class="pt-2">
+    <%= f.submit (individual_order.persisted? ? "Actualizar Pedido" : "Hacer Pedido"),
+          class: "btn-success w-full justify-center" %>
+  </div>
+<% end %>

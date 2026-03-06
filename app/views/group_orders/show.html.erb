@@ -1,0 +1,257 @@
+<div class="max-w-5xl mx-auto">
+  <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-8">
+    <div>
+      <h1 class="text-2xl sm:text-3xl font-display font-bold text-white tracking-tight"><%= @group_order.restaurant.name %></h1>
+      <p class="text-slate-500 text-sm mt-1.5"><%= @group_order.date.strftime("%d/%m/%Y") %> &middot; Creado por <span class="text-slate-400"><%= @group_order.creator.display_name %></span></p>
+    </div>
+    <div class="flex items-center gap-3 shrink-0">
+      <span class="inline-flex items-center px-3 py-1.5 text-xs font-semibold rounded-full
+        <%= case @group_order.status
+            when 'open' then 'badge-open'
+            when 'closed' then 'badge-closed'
+            when 'ordered' then 'badge-ordered'
+            when 'delivered' then 'badge-delivered'
+            end %>">
+        <%= { 'open' => 'Abierto', 'closed' => 'Cerrado', 'ordered' => 'Pedido', 'delivered' => 'Entregado' }[@group_order.status] %>
+      </span>
+      <% if @group_order.status != "delivered" %>
+        <% status_translations = { 'open' => 'Abierto', 'closed' => 'Cerrado', 'ordered' => 'Pedido', 'delivered' => 'Entregado' } %>
+        <%= button_to "Avanzar a #{status_translations[GroupOrder::STATUSES[GroupOrder::STATUSES.index(@group_order.status) + 1]]}",
+              advance_status_group_order_path(@group_order),
+              method: :patch,
+              class: "btn-advance" %>
+      <% end %>
+    </div>
+  </div>
+
+  <% if @group_order.status == "open" && current_user %>
+    <% unless @group_order.individual_orders.exists?(user: current_user) %>
+      <div class="mb-6">
+        <%= link_to new_group_order_individual_order_path(@group_order), class: "btn-success" do %>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          Agregar Mi Pedido
+        <% end %>
+      </div>
+    <% end %>
+  <% end %>
+
+  <div class="glass-card-static overflow-x-auto mb-6">
+    <table class="min-w-[640px] w-full table-dark">
+      <thead>
+        <tr>
+          <% if @group_order.status == "delivered" %>
+            <th class="w-12"></th>
+          <% end %>
+          <th>Usuario</th>
+          <th>Item del Menu</th>
+          <th>Toppings</th>
+          <th>Extras</th>
+          <th class="text-right">Total</th>
+          <% if @group_order.status == "open" %>
+            <th class="w-36"></th>
+          <% end %>
+        </tr>
+      </thead>
+      <tbody>
+        <% @individual_orders.each do |io| %>
+          <tr>
+            <% if @group_order.status == "delivered" %>
+              <td>
+                <%= button_to toggle_paid_group_order_individual_order_path(@group_order, io), method: :patch, class: "inline-flex" do %>
+                  <% if io.paid? %>
+                    <div class="w-7 h-7 sm:w-5 sm:h-5 rounded bg-emerald-500 flex items-center justify-center cursor-pointer hover:bg-emerald-400 transition">
+                      <svg class="w-4 h-4 sm:w-3.5 sm:h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                    </div>
+                  <% else %>
+                    <div class="w-7 h-7 sm:w-5 sm:h-5 rounded border-2 border-slate-600 cursor-pointer hover:border-emerald-500 transition"></div>
+                  <% end %>
+                <% end %>
+              </td>
+            <% end %>
+            <td class="text-white font-medium <%= 'opacity-50 line-through' if @group_order.status == 'delivered' && io.paid? %>"><%= io.user.display_name %></td>
+            <td class="text-slate-300 <%= 'opacity-50' if @group_order.status == 'delivered' && io.paid? %>"><%= io.meal.menu_item.name %> <span class="text-slate-600">($<%= number_with_precision(io.meal.menu_item.price, precision: 2) %>)</span></td>
+            <td class="<%= 'opacity-50' if @group_order.status == 'delivered' && io.paid? %>">
+              <% if io.meal.toppings.any? %>
+                <% toppings = io.meal.toppings.to_a %>
+                <button type="button" data-controller="modal" data-action="click->modal#open" data-modal-id="toppings-modal-<%= io.id %>" class="text-xs text-indigo-400 hover:text-indigo-300 font-medium cursor-pointer transition">Ver toppings (<%= toppings.size %>)</button>
+                <dialog id="toppings-modal-<%= io.id %>" class="modal-dark" data-controller="modal" data-modal-target="dialog" data-action="click->modal#backdropClose">
+                  <div class="p-5">
+                    <div class="flex items-center justify-between mb-4">
+                      <h3 class="text-sm font-semibold text-white">Toppings de <%= io.user.display_name %></h3>
+                      <button type="button" data-action="click->modal#close" class="text-slate-500 hover:text-white transition cursor-pointer">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                      </button>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                      <% toppings.each do |t| %>
+                        <span class="tag-topping"><%= t.name %><% if t.price.to_f > 0 %> <span class="opacity-60">+$<%= number_with_precision(t.price, precision: 2) %></span><% end %></span>
+                      <% end %>
+                    </div>
+                  </div>
+                </dialog>
+              <% else %>
+                <span class="text-slate-600 italic text-sm">Ninguno</span>
+              <% end %>
+            </td>
+            <td class="<%= 'opacity-50' if @group_order.status == 'delivered' && io.paid? %>">
+              <% if io.meal.extras.any? %>
+                <% extras = io.meal.extras.to_a %>
+                <button type="button" data-controller="modal" data-action="click->modal#open" data-modal-id="extras-modal-<%= io.id %>" class="text-xs text-amber-400 hover:text-amber-300 font-medium cursor-pointer transition">Ver extras (<%= extras.size %>)</button>
+                <dialog id="extras-modal-<%= io.id %>" class="modal-dark" data-controller="modal" data-modal-target="dialog" data-action="click->modal#backdropClose">
+                  <div class="p-5">
+                    <div class="flex items-center justify-between mb-4">
+                      <h3 class="text-sm font-semibold text-white">Extras de <%= io.user.display_name %></h3>
+                      <button type="button" data-action="click->modal#close" class="text-slate-500 hover:text-white transition cursor-pointer">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                      </button>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                      <% extras.each do |e| %>
+                        <span class="tag-extra"><%= e.name %><% if e.price.to_f > 0 %> <span class="opacity-60">+$<%= number_with_precision(e.price, precision: 2) %></span><% end %></span>
+                      <% end %>
+                    </div>
+                  </div>
+                </dialog>
+              <% else %>
+                <span class="text-slate-600 italic text-sm">Ninguno</span>
+              <% end %>
+            </td>
+            <td class="text-right font-bold whitespace-nowrap <%= io.paid? && @group_order.status == 'delivered' ? 'text-emerald-400' : 'text-white' %>">
+              <% discount = @group_order.percentage_discount.to_f %>
+              <% if discount > 0 %>
+                <p class="text-xs text-slate-500 line-through">$<%= number_with_precision(io.total, precision: 2) %></p>
+                <p>$<%= number_with_precision(io.total * (1 - discount / 100), precision: 2) %></p>
+              <% else %>
+                $<%= number_with_precision(io.total, precision: 2) %>
+              <% end %>
+            </td>
+            <% if @group_order.status == "open" %>
+              <td class="text-right whitespace-nowrap">
+                <% if io.user == current_user %>
+                  <div class="inline-flex items-center gap-2">
+                    <%= link_to edit_group_order_individual_order_path(@group_order, io), class: "btn-ghost" do %>
+                      <svg class="w-3.5 h-3.5 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                      <span class="hidden sm:inline">Editar</span>
+                    <% end %>
+                    <%= button_to group_order_individual_order_path(@group_order, io), method: :delete,
+                          class: "btn-danger-ghost",
+                          data: { turbo_confirm: "¿Estas seguro?" } do %>
+                      <svg class="w-3.5 h-3.5 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                      <span class="hidden sm:inline">Eliminar</span>
+                    <% end %>
+                  </div>
+                <% end %>
+              </td>
+            <% end %>
+          </tr>
+        <% end %>
+      </tbody>
+      <tfoot>
+        <tr>
+          <% extra_cols = 0 %>
+          <% extra_cols += 1 if @group_order.status == "delivered" %>
+          <td colspan="<%= 4 + extra_cols %>" class="text-right text-sm font-bold text-slate-300">Total:</td>
+          <td class="text-right whitespace-nowrap">
+            <% if @group_order.percentage_discount.to_f > 0 %>
+              <p class="text-sm text-slate-500 line-through">$<%= number_with_precision(@group_order.grand_total, precision: 2) %></p>
+              <p class="text-lg font-bold text-amber-400">$<%= number_with_precision(@group_order.discounted_total, precision: 2) %></p>
+              <p class="text-xs text-emerald-400">-<%= number_with_precision(@group_order.percentage_discount, precision: 2) %>% desc.</p>
+            <% else %>
+              <p class="text-lg font-bold text-amber-400">$<%= number_with_precision(@group_order.grand_total, precision: 2) %></p>
+            <% end %>
+          </td>
+          <% if @group_order.status == "open" %>
+            <td></td>
+          <% end %>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <%# Inline discount editor - always visible %>
+  <div class="glass-card-static p-4 sm:p-5 mb-6 space-y-4">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div>
+        <h3 class="text-sm font-semibold text-white">Descuento por porcentaje</h3>
+        <p class="text-xs text-slate-500 mt-0.5">Aplica un porcentaje de descuento al total</p>
+      </div>
+      <%= form_with url: update_discount_group_order_path(@group_order), method: :patch, class: "flex items-center gap-3" do |f| %>
+        <div class="flex items-center gap-2">
+          <%= f.number_field "group_order[percentage_discount]", value: @group_order.percentage_discount, step: 0.01, min: 0, max: 100, class: "input-dark text-sm py-1.5 px-3 w-24 text-center", placeholder: "0" %>
+          <span class="text-slate-500 text-sm font-medium">%</span>
+        </div>
+        <%= f.submit "Aplicar", class: "btn-primary text-xs py-1.5 px-4" %>
+      <% end %>
+    </div>
+    <div class="border-t border-white/[0.06] pt-4">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h3 class="text-sm font-semibold text-white">Descuento por total abonado</h3>
+          <p class="text-xs text-slate-500 mt-0.5">Ingresa cuanto se pago y se calcula el % automaticamente</p>
+        </div>
+        <%= form_with url: update_discount_from_total_group_order_path(@group_order), method: :patch, class: "flex items-center gap-3" do |f| %>
+          <div class="flex items-center gap-2">
+            <span class="text-slate-500 text-sm font-medium">$</span>
+            <% grand = @group_order.grand_total %>
+            <% current_paid = @group_order.percentage_discount.to_f > 0 ? (grand * (1 - @group_order.percentage_discount.to_f / 100)).round(2) : nil %>
+            <%= f.number_field "group_order[total_paid]", value: current_paid, step: 0.01, min: 0, max: grand, class: "input-dark text-sm py-1.5 px-3 w-28 text-center", placeholder: grand.round(2) %>
+          </div>
+          <%= f.submit "Calcular", class: "btn-primary text-xs py-1.5 px-4" %>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <div class="glass-card-static p-4 sm:p-5 mb-6" data-controller="inline-edit">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div class="shrink-0">
+        <h3 class="text-sm font-semibold text-white">Cuenta Bancaria</h3>
+        <p class="text-xs text-slate-500 mt-0.5">Numero de cuenta para transferencias</p>
+      </div>
+      <% if @group_order.bank_account.present? %>
+        <div data-inline-edit-target="display" class="flex items-center gap-3 w-full sm:w-auto">
+          <span class="input-dark text-sm py-1.5 px-3 flex-1 sm:w-64 opacity-70 cursor-default"><%= @group_order.bank_account %></span>
+          <button type="button" data-action="click->inline-edit#edit" class="btn-ghost text-xs shrink-0">Editar</button>
+        </div>
+        <%= form_with url: update_bank_account_group_order_path(@group_order), method: :patch, class: "hidden flex items-center gap-3 w-full sm:w-auto", data: { inline_edit_target: "form" } do |f| %>
+          <%= f.text_field "group_order[bank_account]", value: @group_order.bank_account, class: "input-dark text-sm py-1.5 px-3 flex-1 sm:w-64", placeholder: "Ej: 001234567890", data: { inline_edit_target: "input" } %>
+          <div class="flex items-center gap-2 shrink-0">
+            <%= f.submit "Guardar", class: "btn-primary text-xs py-1.5 px-4" %>
+            <button type="button" data-action="click->inline-edit#cancel" class="btn-ghost text-xs">Cancelar</button>
+          </div>
+        <% end %>
+      <% else %>
+        <%= form_with url: update_bank_account_group_order_path(@group_order), method: :patch, class: "flex items-center gap-3 w-full sm:w-auto" do |f| %>
+          <%= f.text_field "group_order[bank_account]", value: @group_order.bank_account, class: "input-dark text-sm py-1.5 px-3 flex-1 sm:w-64", placeholder: "Ej: 001234567890" %>
+          <%= f.submit "Guardar", class: "btn-primary text-xs py-1.5 px-4 shrink-0" %>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+
+  <% if @group_order.status == "delivered" %>
+    <% paid_count = @individual_orders.count(&:paid?) %>
+    <% total_count = @individual_orders.size %>
+    <div class="glass-card-static p-4 mb-6">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-emerald-500/15 flex items-center justify-center shrink-0">
+            <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+          <div>
+            <p class="text-sm font-medium text-white">Estado de pagos</p>
+            <p class="text-xs text-slate-500"><%= paid_count %>/<%= total_count %> pagados</p>
+          </div>
+        </div>
+        <div class="w-24 sm:w-32 h-2 rounded-full bg-white/5 overflow-hidden shrink-0">
+          <div class="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all duration-500" style="width: <%= total_count > 0 ? (paid_count.to_f / total_count * 100) : 0 %>%"></div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <%= link_to group_orders_path, class: "inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-amber-400 transition" do %>
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+    Volver a Pedidos
+  <% end %>
+</div>

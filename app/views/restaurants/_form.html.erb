@@ -1,0 +1,20 @@
+<%= form_with model: restaurant, class: "space-y-5" do |f| %>
+  <% if restaurant.errors.any? %>
+    <div class="px-4 py-3 rounded-xl border border-red-500/20 bg-red-500/10">
+      <ul class="list-disc pl-5 text-sm space-y-1 text-red-400">
+        <% restaurant.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= f.label :name, "Nombre", class: "block text-sm font-medium text-slate-400 mb-1.5" %>
+    <%= f.text_field :name, class: "input-dark", placeholder: "Nombre del restaurante" %>
+  </div>
+
+  <div class="pt-2">
+    <%= f.submit (restaurant.persisted? ? "Actualizar" : "Crear Restaurante"), class: "btn-primary w-full justify-center" %>
+  </div>
+<% end %>

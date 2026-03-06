@@ -1,0 +1,52 @@
+<%= form_with model: group_order, class: "space-y-5" do |f| %>
+  <% if group_order.errors.any? %>
+    <div class="px-4 py-3 rounded-xl border border-red-500/20 bg-red-500/10">
+      <ul class="list-disc pl-5 text-sm space-y-1 text-red-400">
+        <% group_order.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= f.label :restaurant_id, "Restaurante", class: "block text-sm font-medium text-slate-400 mb-1.5" %>
+    <div data-controller="custom-select" class="relative">
+      <% selected_rest = restaurants.find { |r| r.id == group_order.restaurant_id } %>
+      <%= f.hidden_field :restaurant_id, data: { custom_select_target: "hidden" } %>
+      <button type="button" data-custom-select-target="button" data-action="click->custom-select#toggle"
+              class="input-dark w-full text-left flex items-center justify-between cursor-pointer <%= selected_rest ? 'text-white' : 'text-slate-500' %>">
+        <span data-label><%= selected_rest ? selected_rest.name : "Seleccionar restaurante" %></span>
+        <svg class="w-4 h-4 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+      </button>
+      <div data-custom-select-target="dropdown" class="hidden absolute z-50 mt-1 w-full rounded-xl border border-white/[0.08] bg-[#0f1629]/[0.98] shadow-xl backdrop-blur-sm">
+        <div class="p-2">
+          <input type="text" data-custom-select-target="search" data-action="input->custom-select#search" placeholder="Buscar restaurante..." class="input-dark text-sm py-2 px-3 w-full" autocomplete="off">
+        </div>
+        <div data-custom-select-target="list" class="max-h-56 overflow-y-auto border-t border-white/[0.06]">
+          <% restaurants.each do |r| %>
+            <button type="button" data-option data-action="click->custom-select#pick"
+                    data-value="<%= r.id %>" data-label="<%= r.name %>"
+                    class="w-full text-left px-3 py-2.5 text-sm text-slate-300 hover:bg-amber-500/10 hover:text-amber-400 transition cursor-pointer border-b border-white/[0.04] last:border-0 <%= 'text-amber-400 bg-amber-500/5' if group_order.restaurant_id == r.id %>">
+              <%= r.name %>
+            </button>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <%= f.label :date, "Fecha", class: "block text-sm font-medium text-slate-400 mb-1.5" %>
+    <%= f.date_field :date, class: "input-dark" %>
+  </div>
+
+  <div>
+    <%= f.label :percentage_discount, "Descuento (%)", class: "block text-sm font-medium text-slate-400 mb-1.5" %>
+    <%= f.number_field :percentage_discount, step: 0.01, min: 0, max: 100, class: "input-dark", placeholder: "0" %>
+  </div>
+
+  <div class="pt-2">
+    <%= f.submit "Crear Pedido Grupal", class: "btn-primary w-full justify-center" %>
+  </div>
+<% end %>

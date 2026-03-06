@@ -1,0 +1,40 @@
+<% selected_topping_ids ||= [] %>
+<% selected_extra_ids ||= [] %>
+
+<% if toppings.any? %>
+  <div class="mt-4">
+    <label class="block text-sm font-medium text-slate-400 mb-2">Aderezos / Toppings</label>
+    <div class="space-y-1 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+      <% toppings.each do |topping| %>
+        <label class="flex items-center gap-2.5 p-2 rounded-lg hover:bg-white/[0.04] cursor-pointer transition">
+          <input type="checkbox" name="meal[topping_ids][]" value="<%= topping.id %>"
+                 data-price="<%= topping.price %>"
+                 data-action="change->total-calculator#calculate"
+                 class="checkbox-dark"
+                 <%= "checked" if selected_topping_ids.include?(topping.id) %>>
+          <span class="text-sm text-slate-300"><%= topping.name %></span>
+          <span class="text-xs text-slate-600 ml-auto">+$<%= number_with_precision(topping.price, precision: 2) %></span>
+        </label>
+      <% end %>
+    </div>
+  </div>
+<% end %>
+
+<% if extras.any? %>
+  <div class="mt-4">
+    <label class="block text-sm font-medium text-slate-400 mb-2">Extras</label>
+    <div class="space-y-1 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+      <% extras.each do |extra| %>
+        <label class="flex items-center gap-2.5 p-2 rounded-lg hover:bg-white/[0.04] cursor-pointer transition">
+          <input type="checkbox" name="meal[extra_ids][]" value="<%= extra.id %>"
+                 data-price="<%= extra.price %>"
+                 data-action="change->total-calculator#calculate"
+                 class="checkbox-dark"
+                 <%= "checked" if selected_extra_ids.include?(extra.id) %>>
+          <span class="text-sm text-slate-300"><%= extra.name %></span>
+          <span class="text-xs text-slate-600 ml-auto">+$<%= number_with_precision(extra.price, precision: 2) %></span>
+        </label>
+      <% end %>
+    </div>
+  </div>
+<% end %>

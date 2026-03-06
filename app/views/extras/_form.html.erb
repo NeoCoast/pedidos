@@ -1,0 +1,25 @@
+<%= form_with model: [restaurant, menu_item, extra], class: "space-y-5" do |f| %>
+  <% if extra.errors.any? %>
+    <div class="px-4 py-3 rounded-xl border border-red-500/20 bg-red-500/10">
+      <ul class="list-disc pl-5 text-sm space-y-1 text-red-400">
+        <% extra.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= f.label :name, "Nombre", class: "block text-sm font-medium text-slate-400 mb-1.5" %>
+    <%= f.text_field :name, class: "input-dark" %>
+  </div>
+
+  <div>
+    <%= f.label :price, "Precio", class: "block text-sm font-medium text-slate-400 mb-1.5" %>
+    <%= f.number_field :price, step: 0.01, class: "input-dark" %>
+  </div>
+
+  <div class="pt-2">
+    <%= f.submit (extra.persisted? ? "Actualizar" : "Crear Extra"), class: "btn-primary w-full justify-center" %>
+  </div>
+<% end %>

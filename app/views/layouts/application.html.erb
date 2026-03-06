@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= content_for(:title) || "Secom" %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Secom">
+    <meta name="mobile-web-app-capable" content="yes">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+
+    <%= yield :head %>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="icon" href="/icon.png" type="image/png">
+    <link rel="apple-touch-icon" href="/icon.png">
+
+    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+
+  <body class="noise-bg min-h-screen text-slate-300 font-body relative">
+    <div data-controller="mobile-menu">
+    <nav class="sticky top-0 z-50 border-b border-white/[0.06]" style="background: rgba(15, 22, 41, 0.8); backdrop-filter: blur(16px);">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+          <div class="flex items-center gap-4 sm:gap-8">
+            <%= link_to root_path, class: "flex items-center gap-2 sm:gap-2.5 group shrink-0" do %>
+              <%= image_tag "Blanco-isotipo.png", class: "h-7 sm:h-8 w-auto", alt: "Secom", height: 26 %>
+              <span class="text-base sm:text-lg font-display font-bold text-white tracking-tight hidden sm:inline">Secom</span>
+            <% end %>
+            <div class="hidden md:flex items-center gap-1">
+              <%= link_to "Inicio", root_path,
+                    class: "nav-link #{request.path == root_path ? 'nav-link-active' : 'nav-link-inactive'}" %>
+              <%= link_to "Restaurantes", restaurants_path,
+                    class: "nav-link #{request.path.start_with?('/restaurants') ? 'nav-link-active' : 'nav-link-inactive'}" %>
+              <%= link_to "Usuarios", users_path,
+                    class: "nav-link #{request.path.start_with?('/users') ? 'nav-link-active' : 'nav-link-inactive'}" %>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+            <div data-controller="user-selector">
+              <%= form_with url: set_user_path, method: :post, data: { "user-selector-target": "form" } do |f| %>
+                <%= f.hidden_field :user_id, value: session[:current_user_id], data: { "user-selector-target": "select" } %>
+              <% end %>
+              <% current_user_obj = session[:current_user_id].present? ? User.find_by(id: session[:current_user_id]) : nil %>
+              <div class="flex items-center gap-2">
+                <% if current_user_obj %>
+                  <span class="text-xs sm:text-sm font-medium text-white truncate max-w-[100px] sm:max-w-none" data-display><%= current_user_obj.display_name %></span>
+                  <button type="button" data-action="click->user-selector#openModal" class="btn-ghost text-xs shrink-0">Cambiar</button>
+                <% else %>
+                  <span class="text-xs sm:text-sm text-slate-500" data-display>Sin usuario</span>
+                <% end %>
+              </div>
+              <dialog data-user-selector-target="dialog" class="modal-dark" data-action="click->user-selector#backdropClose">
+                <div class="p-5">
+                  <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-sm font-semibold text-white">Seleccionar Usuario</h3>
+                    <button type="button" data-action="click->user-selector#closeModal" class="text-slate-500 hover:text-white transition cursor-pointer">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                  </div>
+                  <div class="mb-3">
+                    <input type="text" data-user-selector-target="search" data-action="input->user-selector#onSearch" placeholder="Buscar usuario..." class="input-dark text-sm py-2 px-3 w-full" autocomplete="off">
+                  </div>
+                  <div data-user-selector-target="list" class="max-h-64 overflow-y-auto rounded-lg border border-white/[0.06]">
+                    <% User.order(:first_name).each do |u| %>
+                      <button type="button" data-action="click->user-selector#pick" data-user-item data-user-value="<%= u.id %>" data-user-name="<%= u.display_name %>" class="w-full text-left px-3 py-2.5 text-sm text-slate-300 hover:bg-amber-500/10 hover:text-amber-400 transition cursor-pointer border-b border-white/[0.04] last:border-0 <%= 'text-amber-400 bg-amber-500/5' if session[:current_user_id].to_s == u.id.to_s %>">
+                        <%= u.display_name %>
+                      </button>
+                    <% end %>
+                  </div>
+                </div>
+              </dialog>
+            </div>
+            <button type="button" data-action="click->mobile-menu#toggle" class="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.06] transition cursor-pointer">
+              <svg data-mobile-menu-target="iconOpen" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+              <svg data-mobile-menu-target="iconClose" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <div data-mobile-menu-target="backdrop" data-action="click->mobile-menu#close" class="hidden md:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm" style="top: 64px;"></div>
+    <div data-mobile-menu-target="menu" class="hidden md:hidden fixed left-0 right-0 z-40 border-b border-white/[0.06]" style="top: 64px; background: rgba(15, 22, 41, 0.95); backdrop-filter: blur(16px);">
+      <div class="max-w-6xl mx-auto px-6 py-5 space-y-2">
+        <%= link_to "Restaurantes", restaurants_path,
+              class: "block text-lg font-medium py-3 px-4 rounded-xl transition #{request.path.start_with?('/restaurants') ? 'nav-link-active' : 'nav-link-inactive'}" %>
+        <%= link_to "Usuarios", users_path,
+              class: "block text-lg font-medium py-3 px-4 rounded-xl transition #{request.path.start_with?('/users') ? 'nav-link-active' : 'nav-link-inactive'}" %>
+      </div>
+    </div>
+    </div>
+
+    <main class="relative z-10 max-w-6xl mx-auto mt-8 px-4 sm:px-6 lg:px-8 pb-16">
+      <% if notice %>
+        <div class="mb-6 px-4 py-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 backdrop-blur-sm">
+          <p class="text-sm font-medium text-emerald-400"><%= notice %></p>
+        </div>
+      <% end %>
+      <% if alert %>
+        <div class="mb-6 px-4 py-3 rounded-xl border border-red-500/20 bg-red-500/10 backdrop-blur-sm">
+          <p class="text-sm font-medium text-red-400"><%= alert %></p>
+        </div>
+      <% end %>
+
+      <%= yield %>
+    </main>
+  </body>
+</html>

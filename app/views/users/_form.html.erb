@@ -1,0 +1,31 @@
+<%= form_with model: user, class: "space-y-5" do |f| %>
+  <% if user.errors.any? %>
+    <div class="px-4 py-3 rounded-xl border border-red-500/20 bg-red-500/10">
+      <ul class="list-disc pl-5 text-sm space-y-1 text-red-400">
+        <% user.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= f.label :first_name, "Nombre", class: "block text-sm font-medium text-slate-400 mb-1.5" %>
+    <%= f.text_field :first_name, class: "input-dark" %>
+  </div>
+
+  <div>
+    <%= f.label :last_name, "Apellido", class: "block text-sm font-medium text-slate-400 mb-1.5" %>
+    <%= f.text_field :last_name, class: "input-dark" %>
+  </div>
+
+  <div>
+    <%= f.label :nickname, "Nickname", class: "block text-sm font-medium text-slate-400 mb-1.5" %>
+    <%= f.text_field :nickname, class: "input-dark", placeholder: "Opcional" %>
+    <p class="text-xs text-slate-600 mt-1">Si se define, se muestra en lugar de nombre y apellido</p>
+  </div>
+
+  <div class="pt-2">
+    <%= f.submit (user.persisted? ? "Actualizar" : "Crear Usuario"), class: "btn-primary w-full justify-center" %>
+  </div>
+<% end %>
