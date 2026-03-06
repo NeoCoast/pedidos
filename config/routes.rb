@@ -22,7 +22,10 @@ Rails.application.routes.draw do
       patch :update_bank_account
     end
     resources :individual_orders, only: [:new, :create, :edit, :update, :destroy] do
-      member { patch :toggle_paid }
+      member do
+        patch :toggle_paid
+        patch :toggle_share_paid
+      end
     end
   end
 

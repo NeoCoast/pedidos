@@ -67,6 +67,7 @@ puts "Created #{User.count} users"
 # Restaurant 1: Rudy
 # ============================================================
 rudy = Restaurant.find_or_create_by!(name: "Rudy")
+rudy.update!(url: "https://rudyburgers.com/")
 
 cheese_toppings = %w[Cebolla Ketchup Lechuga Mayonesa Mostaza Pepinillos Tomate]
 cheese_toppings_with_sin = cheese_toppings + ["Sin toppings"]
@@ -127,6 +128,7 @@ veggie_extras.each { |e| veggie.extras.find_or_create_by!(e) }
 # Restaurant 2: Ashot
 # ============================================================
 ashot = Restaurant.find_or_create_by!(name: "Ashot")
+ashot.update!(url: nil)
 
 ashot_toppings = [
   "Hummus", "Tomate", "Mayonesa", "Repollo con zanahoria", "Picante",
@@ -157,6 +159,7 @@ ashot_extras.each { |e| falafel.extras.find_or_create_by!(e) }
 # Restaurant 3: Bilas
 # ============================================================
 bilas = Restaurant.find_or_create_by!(name: "Bilas")
+bilas.update!(url: "https://www.bilas.com.uy/")
 
 bilas_salsas = [
   { name: "Aceite Girasol/Maiz", price: 0 },
@@ -245,6 +248,7 @@ end
 # Restaurant 4: Kona Poke
 # ============================================================
 kona = Restaurant.find_or_create_by!(name: "Kona Poke")
+kona.update!(url: "https://konauy2.web.app/products/konapokecentro")
 
 # All toppings (Base + Proteina + Toppings + Salsas + Chips + Obsequio) - price 0
 kona_toppings = [
@@ -296,6 +300,7 @@ end
 # Restaurant 5: Tropical Smoothies
 # ============================================================
 tropical = Restaurant.find_or_create_by!(name: "Tropical Smoothies")
+tropical.update!(url: "https://www.pedidosya.com.uy/restaurantes/montevideo/tropical-smoothies-cordon-ee9b21b5-c2e2-493c-849f-43af67cf5cdf-menu?origin=shop_list")
 
 tropical_smoothies = [
   { name: "Rio Smooth", price: 359 },
@@ -345,6 +350,7 @@ end
 # Restaurant 6: Donut City
 # ============================================================
 donut_city = Restaurant.find_or_create_by!(name: "Donut City")
+donut_city.update!(url: "https://donut-city-portones.reorder.io/")
 
 donut_city_items = [
   # Meriendas / Boxes
@@ -388,6 +394,7 @@ end
 # Restaurant 7: Nomnom Bakery
 # ============================================================
 nomnom = Restaurant.find_or_create_by!(name: "Nomnom Bakery")
+nomnom.update!(url: "https://www.pedidosya.com.uy/restaurantes/montevideo/nomnom-bakery-056d8847-7901-464a-9aa6-210eb3e5a776-menu?origin=shop_list")
 
 nomnom_items = [
   # Cookies ny

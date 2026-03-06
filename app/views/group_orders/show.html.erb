@@ -1,7 +1,14 @@
 <div class="max-w-5xl mx-auto">
   <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-8">
     <div>
-      <h1 class="text-2xl sm:text-3xl font-display font-bold text-white tracking-tight"><%= @group_order.restaurant.name %></h1>
+      <h1 class="text-2xl sm:text-3xl font-display font-bold text-white tracking-tight">
+        <% if @group_order.restaurant.url.present? %>
+          <%= link_to @group_order.restaurant.name, @group_order.restaurant.url, target: "_blank", class: "hover:text-amber-400 transition" %>
+          <svg class="w-4 h-4 inline-block text-slate-500 -mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+        <% else %>
+          <%= @group_order.restaurant.name %>
+        <% end %>
+      </h1>
       <p class="text-slate-500 text-sm mt-1.5"><%= @group_order.date.strftime("%d/%m/%Y") %> &middot; Creado por <span class="text-slate-400"><%= @group_order.creator.display_name %></span></p>
     </div>
     <div class="flex items-center gap-3 shrink-0">
@@ -43,7 +50,7 @@
           Agregar Mi Pedido
         </button>
         <dialog id="new-order-modal" class="modal-dark modal-large" data-controller="modal" data-modal-target="dialog" data-action="click->modal#backdropClose">
-          <div class="p-5 sm:p-6">
+          <div class="p-5 sm:p-6 overflow-y-auto" style="max-height: calc(80vh - 2px);">
             <div class="flex items-center justify-between mb-5">
               <div>
                 <h3 class="text-base font-semibold text-white">Agregar Tu Pedido</h3>
@@ -79,78 +86,71 @@
       </thead>
       <tbody>
         <% @individual_orders.each do |io| %>
-          <tr>
-            <% if @group_order.status == "delivered" %>
-              <td>
-                <%= button_to toggle_paid_group_order_individual_order_path(@group_order, io), method: :patch, class: "inline-flex" do %>
-                  <% if io.paid? %>
-                    <div class="w-7 h-7 sm:w-5 sm:h-5 rounded bg-emerald-500 flex items-center justify-center cursor-pointer hover:bg-emerald-400 transition">
-                      <svg class="w-4 h-4 sm:w-3.5 sm:h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
-                    </div>
-                  <% else %>
-                    <div class="w-7 h-7 sm:w-5 sm:h-5 rounded border-2 border-slate-600 cursor-pointer hover:border-emerald-500 transition"></div>
-                  <% end %>
+          <% if @group_order.status == "open" %>
+            <%# OPEN: show original order row %>
+            <tr>
+              <td class="text-white font-medium">
+                <%= io.user.display_name %>
+                <% if io.shared? %>
+                  <span class="text-xs text-slate-500 font-normal">(comparte con <%= io.shared_users.map(&:display_name).join(", ") %>)</span>
                 <% end %>
               </td>
-            <% end %>
-            <td class="text-white font-medium <%= 'opacity-50 line-through' if @group_order.status == 'delivered' && io.paid? %>"><%= io.user.display_name %></td>
-            <td class="text-slate-300 <%= 'opacity-50' if @group_order.status == 'delivered' && io.paid? %>"><%= io.meal.menu_item.name %> <span class="text-slate-600">($<%= number_with_precision(io.meal.menu_item.price, precision: 2) %>)</span></td>
-            <td class="<%= 'opacity-50' if @group_order.status == 'delivered' && io.paid? %>">
-              <% if io.meal.toppings.any? %>
-                <% toppings = io.meal.toppings.to_a %>
-                <button type="button" data-controller="modal" data-action="click->modal#open" data-modal-id="toppings-modal-<%= io.id %>" class="text-xs text-indigo-400 hover:text-indigo-300 font-medium cursor-pointer transition">Ver toppings (<%= toppings.size %>)</button>
-                <dialog id="toppings-modal-<%= io.id %>" class="modal-dark" data-controller="modal" data-modal-target="dialog" data-action="click->modal#backdropClose">
-                  <div class="p-5">
-                    <div class="flex items-center justify-between mb-4">
-                      <h3 class="text-sm font-semibold text-white">Toppings de <%= io.user.display_name %></h3>
-                      <button type="button" data-action="click->modal#close" class="text-slate-500 hover:text-white transition cursor-pointer">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                      </button>
+              <td class="text-slate-300"><%= io.meal.menu_item.name %> <span class="text-slate-600">($<%= number_with_precision(io.meal.menu_item.price, precision: 2) %>)</span></td>
+              <td>
+                <% if io.meal.toppings.any? %>
+                  <% toppings = io.meal.toppings.to_a %>
+                  <button type="button" data-controller="modal" data-action="click->modal#open" data-modal-id="toppings-modal-<%= io.id %>" class="text-xs text-indigo-400 hover:text-indigo-300 font-medium cursor-pointer transition">Ver toppings (<%= toppings.size %>)</button>
+                  <dialog id="toppings-modal-<%= io.id %>" class="modal-dark" data-controller="modal" data-modal-target="dialog" data-action="click->modal#backdropClose">
+                    <div class="p-5">
+                      <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-sm font-semibold text-white">Toppings de <%= io.user.display_name %></h3>
+                        <button type="button" data-action="click->modal#close" class="text-slate-500 hover:text-white transition cursor-pointer">
+                          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                      </div>
+                      <div class="flex flex-wrap gap-2">
+                        <% toppings.each do |t| %>
+                          <span class="tag-topping"><%= t.name %><% if t.price.to_f > 0 %> <span class="opacity-60">+$<%= number_with_precision(t.price, precision: 2) %></span><% end %></span>
+                        <% end %>
+                      </div>
                     </div>
-                    <div class="flex flex-wrap gap-2">
-                      <% toppings.each do |t| %>
-                        <span class="tag-topping"><%= t.name %><% if t.price.to_f > 0 %> <span class="opacity-60">+$<%= number_with_precision(t.price, precision: 2) %></span><% end %></span>
-                      <% end %>
+                  </dialog>
+                <% else %>
+                  <span class="text-slate-600 italic text-sm">Ninguno</span>
+                <% end %>
+              </td>
+              <td>
+                <% if io.meal.extras.any? %>
+                  <% extras = io.meal.extras.to_a %>
+                  <button type="button" data-controller="modal" data-action="click->modal#open" data-modal-id="extras-modal-<%= io.id %>" class="text-xs text-amber-400 hover:text-amber-300 font-medium cursor-pointer transition">Ver extras (<%= extras.size %>)</button>
+                  <dialog id="extras-modal-<%= io.id %>" class="modal-dark" data-controller="modal" data-modal-target="dialog" data-action="click->modal#backdropClose">
+                    <div class="p-5">
+                      <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-sm font-semibold text-white">Extras de <%= io.user.display_name %></h3>
+                        <button type="button" data-action="click->modal#close" class="text-slate-500 hover:text-white transition cursor-pointer">
+                          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                      </div>
+                      <div class="flex flex-wrap gap-2">
+                        <% extras.each do |e| %>
+                          <span class="tag-extra"><%= e.name %><% if e.price.to_f > 0 %> <span class="opacity-60">+$<%= number_with_precision(e.price, precision: 2) %></span><% end %></span>
+                        <% end %>
+                      </div>
                     </div>
-                  </div>
-                </dialog>
-              <% else %>
-                <span class="text-slate-600 italic text-sm">Ninguno</span>
-              <% end %>
-            </td>
-            <td class="<%= 'opacity-50' if @group_order.status == 'delivered' && io.paid? %>">
-              <% if io.meal.extras.any? %>
-                <% extras = io.meal.extras.to_a %>
-                <button type="button" data-controller="modal" data-action="click->modal#open" data-modal-id="extras-modal-<%= io.id %>" class="text-xs text-amber-400 hover:text-amber-300 font-medium cursor-pointer transition">Ver extras (<%= extras.size %>)</button>
-                <dialog id="extras-modal-<%= io.id %>" class="modal-dark" data-controller="modal" data-modal-target="dialog" data-action="click->modal#backdropClose">
-                  <div class="p-5">
-                    <div class="flex items-center justify-between mb-4">
-                      <h3 class="text-sm font-semibold text-white">Extras de <%= io.user.display_name %></h3>
-                      <button type="button" data-action="click->modal#close" class="text-slate-500 hover:text-white transition cursor-pointer">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                      </button>
-                    </div>
-                    <div class="flex flex-wrap gap-2">
-                      <% extras.each do |e| %>
-                        <span class="tag-extra"><%= e.name %><% if e.price.to_f > 0 %> <span class="opacity-60">+$<%= number_with_precision(e.price, precision: 2) %></span><% end %></span>
-                      <% end %>
-                    </div>
-                  </div>
-                </dialog>
-              <% else %>
-                <span class="text-slate-600 italic text-sm">Ninguno</span>
-              <% end %>
-            </td>
-            <td class="text-right font-bold whitespace-nowrap <%= io.paid? && @group_order.status == 'delivered' ? 'text-emerald-400' : 'text-white' %>">
-              <% discount = @group_order.percentage_discount.to_f %>
-              <% if discount != 0 %>
-                <p class="text-xs text-slate-500 line-through">$<%= number_with_precision(io.total, precision: 2) %></p>
-                <p>$<%= number_with_precision(io.total * (1 - discount / 100), precision: 2) %></p>
-              <% else %>
-                $<%= number_with_precision(io.total, precision: 2) %>
-              <% end %>
-            </td>
-            <% if @group_order.status == "open" %>
+                  </dialog>
+                <% else %>
+                  <span class="text-slate-600 italic text-sm">Ninguno</span>
+                <% end %>
+              </td>
+              <td class="text-right font-bold whitespace-nowrap text-white">
+                <% discount = @group_order.percentage_discount.to_f %>
+                <% if discount != 0 %>
+                  <p class="text-xs text-slate-500 line-through">$<%= number_with_precision(io.total, precision: 2) %></p>
+                  <p>$<%= number_with_precision(io.total * (1 - discount / 100), precision: 2) %></p>
+                <% else %>
+                  $<%= number_with_precision(io.total, precision: 2) %>
+                <% end %>
+              </td>
               <td class="text-right whitespace-nowrap">
                 <% if io.user == current_user %>
                   <div class="inline-flex items-center gap-2">
@@ -167,8 +167,109 @@
                   </div>
                 <% end %>
               </td>
+            </tr>
+          <% else %>
+            <%# CLOSED/ORDERED/DELIVERED: expand into per-person rows %>
+            <% per_person = io.per_person_total %>
+            <% discount = @group_order.percentage_discount.to_f %>
+            <% is_delivered = @group_order.status == "delivered" %>
+            <%# Build list of participants: owner + shared users %>
+            <% participants = [{user: io.user, paid: io.paid?, toggle_path: toggle_paid_group_order_individual_order_path(@group_order, io), is_owner: true}] %>
+            <% io.order_shares.includes(:user).each do |share| %>
+              <% participants << {user: share.user, paid: share.paid?, toggle_path: toggle_share_paid_group_order_individual_order_path(@group_order, io, user_id: share.user_id), is_owner: false} %>
             <% end %>
-          </tr>
+            <% participants.each_with_index do |p, idx| %>
+              <tr>
+                <% if is_delivered %>
+                  <td>
+                    <% can_toggle = current_user == @group_order.creator || current_user == p[:user] %>
+                    <% if can_toggle %>
+                      <%= button_to p[:toggle_path], method: :patch, class: "inline-flex" do %>
+                        <% if p[:paid] %>
+                          <div class="w-7 h-7 sm:w-5 sm:h-5 rounded bg-emerald-500 flex items-center justify-center cursor-pointer hover:bg-emerald-400 transition">
+                            <svg class="w-4 h-4 sm:w-3.5 sm:h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                          </div>
+                        <% else %>
+                          <div class="w-7 h-7 sm:w-5 sm:h-5 rounded border-2 border-slate-600 cursor-pointer hover:border-emerald-500 transition"></div>
+                        <% end %>
+                      <% end %>
+                    <% else %>
+                      <% if p[:paid] %>
+                        <div class="w-7 h-7 sm:w-5 sm:h-5 rounded bg-emerald-500/50 flex items-center justify-center">
+                          <svg class="w-4 h-4 sm:w-3.5 sm:h-3.5 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                        </div>
+                      <% else %>
+                        <div class="w-7 h-7 sm:w-5 sm:h-5 rounded border-2 border-slate-700"></div>
+                      <% end %>
+                    <% end %>
+                  </td>
+                <% end %>
+                <td class="text-white font-medium <%= 'opacity-50 line-through' if is_delivered && p[:paid] %>"><%= p[:user].display_name %></td>
+                <% if idx == 0 %>
+                  <td class="text-slate-300 <%= 'opacity-50' if is_delivered && p[:paid] %>" <% if participants.size > 1 %>rowspan="<%= participants.size %>"<% end %>>
+                    <%= io.meal.menu_item.name %> <span class="text-slate-600">($<%= number_with_precision(io.meal.menu_item.price, precision: 2) %>)</span>
+                    <% if io.shared? %>
+                      <p class="text-xs text-slate-500 mt-0.5">÷ <%= io.share_count %></p>
+                    <% end %>
+                  </td>
+                  <td class="<%= 'opacity-50' if is_delivered && p[:paid] %>" <% if participants.size > 1 %>rowspan="<%= participants.size %>"<% end %>>
+                    <% if io.meal.toppings.any? %>
+                      <% toppings = io.meal.toppings.to_a %>
+                      <button type="button" data-controller="modal" data-action="click->modal#open" data-modal-id="toppings-modal-<%= io.id %>" class="text-xs text-indigo-400 hover:text-indigo-300 font-medium cursor-pointer transition">Ver toppings (<%= toppings.size %>)</button>
+                      <dialog id="toppings-modal-<%= io.id %>" class="modal-dark" data-controller="modal" data-modal-target="dialog" data-action="click->modal#backdropClose">
+                        <div class="p-5">
+                          <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-sm font-semibold text-white">Toppings de <%= io.user.display_name %></h3>
+                            <button type="button" data-action="click->modal#close" class="text-slate-500 hover:text-white transition cursor-pointer">
+                              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                          </div>
+                          <div class="flex flex-wrap gap-2">
+                            <% toppings.each do |t| %>
+                              <span class="tag-topping"><%= t.name %><% if t.price.to_f > 0 %> <span class="opacity-60">+$<%= number_with_precision(t.price, precision: 2) %></span><% end %></span>
+                            <% end %>
+                          </div>
+                        </div>
+                      </dialog>
+                    <% else %>
+                      <span class="text-slate-600 italic text-sm">Ninguno</span>
+                    <% end %>
+                  </td>
+                  <td class="<%= 'opacity-50' if is_delivered && p[:paid] %>" <% if participants.size > 1 %>rowspan="<%= participants.size %>"<% end %>>
+                    <% if io.meal.extras.any? %>
+                      <% extras = io.meal.extras.to_a %>
+                      <button type="button" data-controller="modal" data-action="click->modal#open" data-modal-id="extras-modal-<%= io.id %>" class="text-xs text-amber-400 hover:text-amber-300 font-medium cursor-pointer transition">Ver extras (<%= extras.size %>)</button>
+                      <dialog id="extras-modal-<%= io.id %>" class="modal-dark" data-controller="modal" data-modal-target="dialog" data-action="click->modal#backdropClose">
+                        <div class="p-5">
+                          <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-sm font-semibold text-white">Extras de <%= io.user.display_name %></h3>
+                            <button type="button" data-action="click->modal#close" class="text-slate-500 hover:text-white transition cursor-pointer">
+                              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                          </div>
+                          <div class="flex flex-wrap gap-2">
+                            <% extras.each do |e| %>
+                              <span class="tag-extra"><%= e.name %><% if e.price.to_f > 0 %> <span class="opacity-60">+$<%= number_with_precision(e.price, precision: 2) %></span><% end %></span>
+                            <% end %>
+                          </div>
+                        </div>
+                      </dialog>
+                    <% else %>
+                      <span class="text-slate-600 italic text-sm">Ninguno</span>
+                    <% end %>
+                  </td>
+                <% end %>
+                <td class="text-right font-bold whitespace-nowrap <%= p[:paid] && is_delivered ? 'text-emerald-400' : 'text-white' %>">
+                  <% if discount != 0 %>
+                    <p class="text-xs text-slate-500 line-through">$<%= number_with_precision(per_person, precision: 2) %></p>
+                    <p>$<%= number_with_precision(per_person * (1 - discount / 100), precision: 2) %></p>
+                  <% else %>
+                    $<%= number_with_precision(per_person, precision: 2) %>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          <% end %>
         <% end %>
       </tbody>
       <tfoot>
@@ -260,8 +361,9 @@
   </div>
 
   <% if @group_order.status == "delivered" %>
-    <% paid_count = @individual_orders.count(&:paid?) %>
-    <% total_count = @individual_orders.size %>
+    <% all_participants = @individual_orders.flat_map { |io| [{paid: io.paid?}] + io.order_shares.map { |s| {paid: s.paid?} } } %>
+    <% paid_count = all_participants.count { |p| p[:paid] } %>
+    <% total_count = all_participants.size %>
     <div class="glass-card-static p-4 mb-6">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">

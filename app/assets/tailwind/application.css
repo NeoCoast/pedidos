@@ -344,6 +344,7 @@ dialog.modal-dark {
   border-radius: 1rem;
   color: #e2e8f0;
   padding: 0;
+  margin: auto;
   max-width: 28rem;
   width: 90vw;
   max-height: 85vh;
@@ -352,8 +353,8 @@ dialog.modal-dark {
 dialog.modal-large {
   max-width: 36rem;
   width: 94vw;
-  max-height: 90vh;
-  overflow: visible;
+  max-height: 80vh;
+  overflow: hidden;
 }
 dialog.modal-dark::backdrop {
   background: rgba(0, 0, 0, 0.6);

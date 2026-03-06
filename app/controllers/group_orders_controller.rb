@@ -12,7 +12,7 @@ class GroupOrdersController < ApplicationController
   end
 
   def show
-    @individual_orders = @group_order.individual_orders.includes(:user, meal: [:menu_item, :toppings, :extras])
+    @individual_orders = @group_order.individual_orders.includes(:user, :order_shares, shared_users: [], meal: [:menu_item, :toppings, :extras])
     @menu_items = @group_order.restaurant.menu_items.order(:name)
     @meal = Meal.new
     @individual_order = @group_order.individual_orders.build(meal: @meal)

@@ -4,7 +4,7 @@
 <% if toppings.any? %>
   <div class="mt-4">
     <label class="block text-sm font-medium text-slate-400 mb-2">Aderezos / Toppings</label>
-    <div class="space-y-1 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+    <div class="space-y-1 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 max-h-48 overflow-y-auto">
       <% toppings.each do |topping| %>
         <label class="flex items-center gap-2.5 p-2 rounded-lg hover:bg-white/[0.04] cursor-pointer transition">
           <input type="checkbox" name="meal[topping_ids][]" value="<%= topping.id %>"
@@ -23,7 +23,7 @@
 <% if extras.any? %>
   <div class="mt-4">
     <label class="block text-sm font-medium text-slate-400 mb-2">Extras</label>
-    <div class="space-y-1 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+    <div class="space-y-1 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 max-h-48 overflow-y-auto">
       <% extras.each do |extra| %>
         <label class="flex items-center gap-2.5 p-2 rounded-lg hover:bg-white/[0.04] cursor-pointer transition">
           <input type="checkbox" name="meal[extra_ids][]" value="<%= extra.id %>"

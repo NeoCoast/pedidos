@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_06_175506) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_06_184657) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -86,10 +86,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_06_175506) do
     t.index ["restaurant_id"], name: "index_menu_items_on_restaurant_id"
   end
 
+  create_table "order_shares", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "individual_order_id", null: false
+    t.boolean "paid", default: false, null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["individual_order_id", "user_id"], name: "index_order_shares_on_individual_order_id_and_user_id", unique: true
+    t.index ["individual_order_id"], name: "index_order_shares_on_individual_order_id"
+    t.index ["user_id"], name: "index_order_shares_on_user_id"
+  end
+
   create_table "restaurants", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "name"
     t.datetime "updated_at", null: false
+    t.string "url"
   end
 
   create_table "toppings", force: :cascade do |t|
@@ -123,5 +135,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_06_175506) do
   add_foreign_key "meal_toppings", "toppings"
   add_foreign_key "meals", "menu_items"
   add_foreign_key "menu_items", "restaurants"
+  add_foreign_key "order_shares", "individual_orders"
+  add_foreign_key "order_shares", "users"
   add_foreign_key "toppings", "menu_items"
 end

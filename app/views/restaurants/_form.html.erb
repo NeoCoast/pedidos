@@ -14,6 +14,11 @@
     <%= f.text_field :name, class: "input-dark", placeholder: "Nombre del restaurante" %>
   </div>
 
+  <div>
+    <%= f.label :url, "URL del menu", class: "block text-sm font-medium text-slate-400 mb-1.5" %>
+    <%= f.url_field :url, class: "input-dark", placeholder: "https://..." %>
+  </div>
+
   <div class="pt-2">
     <%= f.submit (restaurant.persisted? ? "Actualizar" : "Crear Restaurante"), class: "btn-primary w-full justify-center" %>
   </div>

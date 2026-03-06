@@ -59,6 +59,38 @@
     <% end %>
   </div>
 
+  <div>
+    <label class="block text-sm font-medium text-slate-400 mb-1.5">Compartir con</label>
+    <div data-controller="checkbox-select" class="relative">
+      <button type="button" data-checkbox-select-target="button" data-action="click->checkbox-select#toggle"
+              class="input-dark w-full text-left flex items-center justify-between cursor-pointer text-slate-500">
+        <span class="flex items-center gap-2">
+          Seleccionar personas
+          <span data-checkbox-select-target="count" class="hidden inline-flex items-center justify-center w-5 h-5 text-xs font-bold rounded-full bg-amber-500/20 text-amber-400"></span>
+        </span>
+        <svg class="w-4 h-4 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+      </button>
+      <div data-checkbox-select-target="dropdown" class="hidden absolute z-50 mt-1 w-full rounded-xl border border-white/[0.08] bg-[#0f1629]/[0.98] shadow-xl backdrop-blur-sm">
+        <div class="p-2">
+          <input type="text" data-checkbox-select-target="search" data-action="input->checkbox-select#search" placeholder="Buscar usuario..." class="input-dark text-sm py-2 px-3 w-full" autocomplete="off">
+        </div>
+        <div data-checkbox-select-target="list" class="max-h-48 overflow-y-auto border-t border-white/[0.06]">
+          <% selected_share_ids = defined?(shared_user_ids) ? shared_user_ids : (individual_order.persisted? ? individual_order.shared_users.pluck(:id) : []) %>
+          <% User.kept.where.not(id: (defined?(current_user_id) ? current_user_id : controller.send(:current_user)&.id)).order(:first_name).each do |u| %>
+            <label data-option data-label="<%= u.display_name %>" class="flex items-center gap-3 w-full px-3 py-2.5 text-sm text-slate-300 hover:bg-amber-500/10 hover:text-amber-400 transition cursor-pointer border-b border-white/[0.04] last:border-0">
+              <input type="checkbox" name="shared_user_ids[]" value="<%= u.id %>"
+                     data-action="change->checkbox-select#check"
+                     class="w-4 h-4 rounded border-slate-600 bg-transparent text-amber-500 focus:ring-amber-500/30 cursor-pointer"
+                     <%= 'checked' if selected_share_ids.include?(u.id) %>>
+              <span><%= u.display_name %></span>
+            </label>
+          <% end %>
+        </div>
+      </div>
+    </div>
+    <p class="text-xs text-slate-600 mt-1">El total se dividira entre vos y las personas seleccionadas</p>
+  </div>
+
   <div class="rounded-xl border border-amber-500/20 bg-amber-500/10 p-4">
     <p class="text-lg font-bold text-white">
       Total Estimado: <span class="text-amber-400">$<span data-total-calculator-target="total">0.00</span></span>

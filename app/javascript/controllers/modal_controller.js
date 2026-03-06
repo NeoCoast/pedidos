@@ -9,7 +9,6 @@ export default class extends Controller {
     const dialog = document.getElementById(id)
     if (dialog) {
       dialog.showModal()
-      this.centerDialog(dialog)
     }
   }
 
@@ -21,14 +20,5 @@ export default class extends Controller {
     if (event.target === this.dialogTarget) {
       this.dialogTarget.close()
     }
-  }
-
-  centerDialog(dialog) {
-    const rect = dialog.getBoundingClientRect()
-    const top = (window.innerHeight - rect.height) / 2
-    const left = (window.innerWidth - rect.width) / 2
-    dialog.style.top = `${top}px`
-    dialog.style.left = `${left}px`
-    dialog.style.margin = '0'
   }
 }

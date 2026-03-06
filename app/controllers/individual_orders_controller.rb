@@ -30,6 +30,7 @@ class IndividualOrdersController < ApplicationController
     )
 
     if @meal.save && @individual_order.save
+      save_shared_users(@individual_order)
       redirect_to @group_order, notice: "Tu pedido fue agregado."
     else
       errors = (@meal.errors.full_messages + @individual_order.errors.full_messages).uniq.join(", ")
@@ -61,6 +62,7 @@ class IndividualOrdersController < ApplicationController
     end
 
     if @meal.save && @individual_order.save
+      save_shared_users(@individual_order)
       redirect_to @group_order, notice: "Tu pedido fue actualizado."
     else
       @menu_items = @group_order.restaurant.menu_items.order(:name)
@@ -70,7 +72,24 @@ class IndividualOrdersController < ApplicationController
 
   def toggle_paid
     @individual_order = @group_order.individual_orders.find(params[:id])
+
+    unless current_user == @group_order.creator || current_user == @individual_order.user
+      return redirect_to @group_order, alert: "Solo el creador del pedido o el propio usuario pueden marcar pagos."
+    end
+
     @individual_order.update!(paid: !@individual_order.paid)
+    redirect_to @group_order
+  end
+
+  def toggle_share_paid
+    @individual_order = @group_order.individual_orders.find(params[:id])
+    share = @individual_order.order_shares.find_by!(user_id: params[:user_id])
+
+    unless current_user == @group_order.creator || current_user == share.user
+      return redirect_to @group_order, alert: "Solo el creador del pedido o el propio usuario pueden marcar pagos."
+    end
+
+    share.update!(paid: !share.paid)
     redirect_to @group_order
   end
 
@@ -91,5 +110,18 @@ class IndividualOrdersController < ApplicationController
 
   def meal_params
     params.require(:meal).permit(:menu_item_id, topping_ids: [], extra_ids: [])
+  end
+
+  def save_shared_users(individual_order)
+    ids = (params[:shared_user_ids] || []).reject(&:blank?).map(&:to_i)
+    existing_ids = individual_order.order_shares.pluck(:user_id)
+
+    # Remove unselected
+    individual_order.order_shares.where.not(user_id: ids).destroy_all
+
+    # Add new
+    (ids - existing_ids).each do |uid|
+      individual_order.order_shares.create(user_id: uid)
+    end
   end
 end
